@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CreateWithAlli — Live Crypto & Trending Picks</title>
+  <style>
+    :root {
+      --bg:       #0a0a0f;
+      --surface:  #13131a;
+      --card:     #1c1c28;
+      --border:   #2a2a3d;
+      --accent:   #a259ff;
+      --gold:     #f5c542;
+      --green:    #22c55e;
+      --red:      #ef4444;
+      --text:     #f0f0f5;
+      --muted:    #8888aa;
+      --radius:   14px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 64px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .logo {
+      font-size: 1.4rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, var(--accent), var(--gold));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      letter-spacing: -0.5px;
+    }
+
+    .tagline { font-size: 0.8rem; color: var(--muted); display: none; }
+    @media (min-width: 600px) { .tagline { display: block; } }
+
+    .last-updated { font-size: 0.75rem; color: var(--muted); text-align: right; }
+
+    .dot {
+      display: inline-block;
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: var(--green);
+      margin-right: 5px;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+    main { max-width: 1100px; margin: 0 auto; padding: 32px 16px 64px; }
+
+    .section-title {
+      font-size: 1.1rem; font-weight: 700; color: var(--text);
+      margin-bottom: 16px; display: flex; align-items: center; gap: 8px;
+    }
+    .section-title span { font-size: 1.3rem; }
+
+    .crypto-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 12px; margin-bottom: 48px;
+    }
+
+    .coin-card {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 16px;
+      transition: transform 0.15s, border-color 0.15s;
+    }
+    .coin-card:hover { transform: translateY(-2px); border-color: var(--accent); }
+
+    .coin-ticker { font-size: 0.7rem; font-weight: 700; letter-spacing: 1px; color: var(--muted); text-transform: uppercase; margin-bottom: 2px; }
+    .coin-name   { font-size: 0.85rem; font-weight: 600; color: var(--text); margin-bottom: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .coin-price  { font-size: 1.05rem; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+    .coin-change { font-size: 0.78rem; font-weight: 600; }
+    .up   { color: var(--green); }
+    .down { color: var(--red); }
+
+    .skeleton {
+      background: linear-gradient(90deg, var(--border) 25%, #2f2f45 50%, var(--border) 75%);
+      background-size: 200% 100%; animation: shimmer 1.4s infinite;
+      border-radius: 6px; height: 1em;
+    }
+    @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+    .error-banner {
+      background: #2a1a1a; border: 1px solid var(--red); border-radius: var(--radius);
+      padding: 12px 16px; font-size: 0.85rem; color: #f87171; margin-bottom: 16px; display: none;
+    }
+
+    .amazon-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 16px; margin-bottom: 48px;
+    }
+    .amazon-card {
+      background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 20px; display: flex; flex-direction: column; gap: 12px;
+      transition: transform 0.15s, border-color 0.15s;
+    }
+    .amazon-card:hover { transform: translateY(-2px); border-color: var(--gold); }
+    .amazon-label { font-size: 0.7rem; font-weight: 700; letter-spacing: 1px; color: var(--gold); text-transform: uppercase; }
+    .amazon-title { font-size: 0.95rem; font-weight: 600; color: var(--text); line-height: 1.4; }
+    .amazon-desc  { font-size: 0.8rem; color: var(--muted); line-height: 1.5; flex: 1; }
+    .amazon-btn {
+      display: inline-block;
+      background: linear-gradient(135deg, var(--gold), #e8a820);
+      color: #0a0a0f; font-weight: 700; font-size: 0.82rem;
+      padding: 8px 14px; border-radius: 8px; text-decoration: none;
+      text-align: center; transition: opacity 0.15s;
+    }
+    .amazon-btn:hover { opacity: 0.88; }
+
+    .storefront-banner {
+      background: linear-gradient(135deg, #1a1228, #1c1c28);
+      border: 1px solid var(--accent); border-radius: var(--radius);
+      padding: 24px; display: flex; align-items: center;
+      justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 48px;
+    }
+    .storefront-text h3 { font-size: 1rem; font-weight: 700; margin-bottom: 4px; }
+    .storefront-text p  { font-size: 0.83rem; color: var(--muted); }
+    .storefront-btn {
+      display: inline-block;
+      background: linear-gradient(135deg, var(--accent), #7c3aed);
+      color: #fff; font-weight: 700; font-size: 0.85rem;
+      padding: 10px 20px; border-radius: 8px; text-decoration: none;
+      white-space: nowrap; transition: opacity 0.15s;
+    }
+    .storefront-btn:hover { opacity: 0.88; }
+
+    .insights-grid {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 16px; margin-bottom: 48px;
+    }
+    @media (max-width: 640px) { .insights-grid { grid-template-columns: 1fr; } }
+
+    .insight-card {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 20px;
+    }
+    .insight-card h4 {
+      font-size: 0.78rem; font-weight: 700; letter-spacing: 1px;
+      text-transform: uppercase; color: var(--accent); margin-bottom: 12px;
+    }
+    .insight-body {
+      font-size: 0.85rem; color: var(--muted); line-height: 1.65;
+      white-space: pre-wrap; min-height: 80px;
+    }
+    .insight-body.loading { display: flex; align-items: center; gap: 8px; }
+    .spinner {
+      width: 14px; height: 14px;
+      border: 2px solid var(--border); border-top-color: var(--accent);
+      border-radius: 50%; animation: spin 0.8s linear infinite; flex-shrink: 0;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .insight-refresh {
+      background: none; border: 1px solid var(--border); color: var(--muted);
+      font-size: 0.75rem; padding: 5px 10px; border-radius: 6px;
+      cursor: pointer; margin-top: 12px; transition: border-color 0.15s, color 0.15s;
+    }
+    .insight-refresh:hover { border-color: var(--accent); color: var(--accent); }
+
+    footer {
+      text-align: center; color: var(--muted); font-size: 0.78rem;
+      padding: 24px 16px; border-top: 1px solid var(--border);
+    }
+    footer a { color: var(--accent); text-decoration: none; }
+  </style>
+</head>
+<body>
+
+<header>
+  <div>
+    <div class="logo">CreateWithAlli</div>
+    <div class="tagline">Live Crypto · Trending Picks · Real Deals</div>
+  </div>
+  <div class="last-updated" id="lastUpdated">Loading prices…</div>
+</header>
+
+<main>
+
+  <div class="section-title"><span>📈</span> Live Crypto Prices</div>
+  <div id="errorBanner" class="error-banner"></div>
+  <div class="crypto-grid" id="cryptoGrid">
+    <div class="coin-card" style="opacity:0.4">
+      <div class="skeleton" style="width:40%;margin-bottom:6px"></div>
+      <div class="skeleton" style="width:70%;margin-bottom:14px"></div>
+      <div class="skeleton" style="width:55%;margin-bottom:6px"></div>
+      <div class="skeleton" style="width:35%"></div>
+    </div>
+  </div>
+
+  <div class="section-title"><span>🛍️</span> Shop My Picks</div>
+  <div class="storefront-banner">
+    <div class="storefront-text">
+      <h3>My Amazon Storefront</h3>
+      <p>All my favourite finds in one place — updated regularly.</p>
+    </div>
+    <a class="storefront-btn" href="https://www.amazon.com/shop/createwithalli" target="_blank" rel="noopener">Visit My Storefront →</a>
+  </div>
+
+  <div class="section-title"><span>🔥</span> Trending Right Now</div>
+  <div class="amazon-grid">
+    <div class="amazon-card">
+      <div class="amazon-label">Viral Pick</div>
+      <div class="amazon-title">Add your first product here</div>
+      <div class="amazon-desc">Paste your affiliate link and a short description to feature your top picks.</div>
+      <a class="amazon-btn" href="https://www.amazon.com/shop/createwithalli" target="_blank" rel="noopener">Shop Now</a>
+    </div>
+    <div class="amazon-card">
+      <div class="amazon-label">Best Seller</div>
+      <div class="amazon-title">Add your second product here</div>
+      <div class="amazon-desc">Share what you're loving — your audience trusts your recommendations.</div>
+      <a class="amazon-btn" href="https://www.amazon.com/shop/createwithalli" target="_blank" rel="noopener">Shop Now</a>
+    </div>
+    <div class="amazon-card">
+      <div class="amazon-label">Alli's Fave</div>
+      <div class="amazon-title">Add your third product here</div>
+      <div class="amazon-desc">Feature anything trending — beauty, home, tech, fitness, and more.</div>
+      <a class="amazon-btn" href="https://www.amazon.com/shop/createwithalli" target="_blank" rel="noopener">Shop Now</a>
+    </div>
+  </div>
+
+  <div class="section-title"><span>🤖</span> AI Agent Insights</div>
+  <div class="insights-grid">
+    <div class="insight-card">
+      <h4>Crypto Pulse</h4>
+      <div class="insight-body loading" id="cryptoInsight"><div class="spinner"></div> Waiting for prices…</div>
+      <button class="insight-refresh" onclick="runCryptoAgent()">↻ Refresh</button>
+    </div>
+    <div class="insight-card">
+      <h4>Amazon Trend Radar</h4>
+      <div class="insight-body loading" id="amazonInsight"><div class="spinner"></div> Loading trends…</div>
+      <button class="insight-refresh" onclick="runAmazonAgent()">↻ Refresh</button>
+    </div>
+  </div>
+
+</main>
+
+<footer>
+  © 2026 <a href="https://createwithalli.com">CreateWithAlli</a> · Prices via CoinGecko · Updated every 60 seconds
+</footer>
+
+<script>
+  const COINS = [
+    { id: "bitcoin",   ticker: "BTC",  name: "Bitcoin"   },
+    { id: "ethereum",  ticker: "ETH",  name: "Ethereum"  },
+    { id: "ripple",    ticker: "XRP",  name: "XRP"       },
+    { id: "sui",       ticker: "SUI",  name: "Sui"       },
+    { id: "chainlink", ticker: "LINK", name: "Chainlink" },
+    { id: "solana",    ticker: "SOL",  name: "Solana"    },
+    { id: "cardano",   ticker: "ADA",  name: "Cardano"   },
+    { id: "dogecoin",  ticker: "DOGE", name: "Dogecoin"  },
+    { id: "bittensor", ticker: "TAO",  name: "Bittensor" },
+    { id: "fetch-ai",  ticker: "FET",  name: "Fetch.ai"  },
+  ];
+
+  const IDS = COINS.map(c => c.id).join(",");
+  const API = `https://api.coingecko.com/api/v3/simple/price?ids=${IDS}&vs_currencies=usd&include_24hr_change=true`;
+
+  function fmt(n) {
+    if (n >= 1000) return "$" + n.toLocaleString("en-US", { maximumFractionDigits: 0 });
+    if (n >= 1)    return "$" + n.toFixed(2);
+    return "$" + n.toFixed(4);
+  }
+
+  let latestPrices = {};
+
+  function renderGrid(data) {
+    latestPrices = {};
+    COINS.forEach(coin => {
+      if (data[coin.id]) {
+        latestPrices[coin.ticker] = {
+          price:  data[coin.id].usd,
+          change: data[coin.id].usd_24h_change ?? 0,
+        };
+      }
+    });
+    const grid = document.getElementById("cryptoGrid");
+    grid.innerHTML = COINS.map(coin => {
+      const info   = data[coin.id];
+      const price  = info ? info.usd : null;
+      const change = info ? info.usd_24h_change : null;
+      const up     = change >= 0;
+      return `
+        <div class="coin-card">
+          <div class="coin-ticker">${coin.ticker}</div>
+          <div class="coin-name">${coin.name}</div>
+          <div class="coin-price">${price != null ? fmt(price) : "—"}</div>
+          ${change != null
+            ? `<div class="coin-change ${up ? "up" : "down"}">${up ? "▲" : "▼"} ${Math.abs(change).toFixed(2)}% (24h)</div>`
+            : `<div class="coin-change" style="color:var(--muted)">— 24h</div>`}
+        </div>`;
+    }).join("");
+  }
+
+  function showError(msg) {
+    const el = document.getElementById("errorBanner");
+    el.textContent = msg;
+    el.style.display = "block";
+  }
+
+  async function fetchPrices() {
+    try {
+      const res  = await fetch(API);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      renderGrid(data);
+      document.getElementById("errorBanner").style.display = "none";
+      document.getElementById("lastUpdated").innerHTML =
+        `<span class="dot"></span>Updated ${new Date().toLocaleTimeString()}`;
+      if (Object.keys(latestPrices).length &&
+          document.getElementById("cryptoInsight").classList.contains("loading")) {
+        runCryptoAgent();
+      }
+    } catch (err) {
+      showError("⚠️  Could not reach CoinGecko — retrying in 60s.");
+      document.getElementById("lastUpdated").textContent = "Price update failed";
+    }
+  }
+
+  function setInsight(id, text) {
+    const el = document.getElementById(id);
+    el.classList.remove("loading");
+    el.style.color = "var(--text)";
+    el.textContent = text;
+  }
+
+  function runCryptoAgent() {
+    const entries = Object.entries(latestPrices);
+    if (!entries.length) return;
+    const sorted = [...entries].sort((a, b) => b[1].change - a[1].change);
+    const bullish = entries.filter(([, v]) => v.change >= 0).length;
+    const bearish = entries.length - bullish;
+    const top     = sorted[0];
+    const bottom  = sorted[sorted.length - 1];
+    const bigUp   = sorted.filter(([, v]) => v.change >  3).length;
+    const bigDown = sorted.filter(([, v]) => v.change < -3).length;
+    const lines   = [];
+    if (bullish >= 7)
+      lines.push(`🟢 Market broadly GREEN — ${bullish}/${entries.length} coins up in the last 24h`);
+    else if (bearish >= 7)
+      lines.push(`🔴 Market broadly RED — ${bearish}/${entries.length} coins down in the last 24h`);
+    else
+      lines.push(`⚖️ Mixed market — ${bullish} up, ${bearish} down in the last 24h`);
+    if (top)
+      lines.push(`🚀 Biggest gainer: ${top[0]} +${top[1].change.toFixed(2)}% (${fmt(top[1].price)})`);
+    if (bottom && bottom[1].change < 0)
+      lines.push(`📉 Biggest drop: ${bottom[0]} ${bottom[1].change.toFixed(2)}% (${fmt(bottom[1].price)})`);
+    if (bigUp > 3)   lines.push(`⚡ ${bigUp} coins up 3%+ — strong bullish momentum`);
+    if (bigDown > 3) lines.push(`⚠️ ${bigDown} coins down 3%+ — broad selling pressure today`);
+    setInsight("cryptoInsight", lines.join("\n\n"));
+  }
+
+  function runAmazonAgent() {
+    const month  = new Date().getMonth();
+    const trends = [
+      ["🏋️ Fitness & Home Gym — New Year resolutions drive huge demand for workout gear",
+       "📚 Self-improvement books — Planners, journals, and productivity tools fly off shelves",
+       "🍲 Meal prep containers — Healthy eating goals = kitchen organisation boom"],
+      ["💝 Valentine's Day gifts — Jewellery, candles, and personalised items peak now",
+       "💄 Beauty & skincare sets — Gift-worthy bundles trending across all price points",
+       "🌹 Home fragrance — Candles and diffusers spike around Valentine's week"],
+      ["🌱 Spring cleaning supplies — Organisers, storage, and cleaning tools trending",
+       "🌸 Skincare & SPF — Transition-to-spring routines boost beauty sales",
+       "👗 Spring fashion — Light layers, pastel tones, and transitional pieces"],
+      ["🌿 Garden & outdoor — Planters, seeds, and patio furniture sell fast",
+       "🐣 Easter gifts & decor — Baskets and home decoration in demand",
+       "☀️ Outdoor entertaining — BBQ tools and outdoor dining trending"],
+      ["🎓 Graduation gifts — Tech accessories, bags, and experiences are top sellers",
+       "👩 Mother's Day picks — Jewellery, spa sets, and personalised gifts peak",
+       "🪴 Home & garden — Outdoor furniture and plants surge with warm weather"],
+      ["🏖️ Summer travel essentials — Luggage, organisers, and beach gear trending",
+       "👨 Father's Day gifts — Grilling gear, gadgets, and outdoor tools in demand",
+       "☀️ Sun care & cooling — SPF, fans, and cooling towels flying off shelves"],
+      ["🏕️ Outdoor & camping — Tents, coolers, and adventure gear at peak demand",
+       "💧 Water toys & pools — Inflatables and splash pads trending with families",
+       "🎉 Prime Day deals — Electronics, kitchen, and home picks drive massive traffic"],
+      ["🎒 Back to school — Backpacks, supplies, and dorm essentials are #1",
+       "💻 Tech for students — Laptops, headphones, and accessories trending",
+       "📦 Storage & organisation — College move-in drives containers and shelving sales"],
+      ["🍂 Fall home decor — Pumpkins, candles, and cozy textures trending",
+       "🧥 Transitional fashion — Light jackets, boots, and layering pieces picking up",
+       "☕ Cozy kitchen — Air fryers, coffee makers, and baking supplies in demand"],
+      ["🎃 Halloween costumes & decor — Huge spike across all Halloween categories",
+       "🕯️ Cozy home essentials — Blankets, candles, and fall scents trending",
+       "🛒 Early holiday shopping — Shoppers start gift lists now — feature your picks"],
+      ["🛍️ Black Friday prep — Electronics, kitchen, and beauty haul content performs",
+       "🎁 Holiday gift guides — Curated lists drive massive affiliate commissions",
+       "🧸 Toys & games — Start featuring early — parents shop weeks ahead"],
+      ["🎄 Last-minute gifts — Prime delivery gifts trend hard in final weeks",
+       "🏠 Cozy home gifts — Candles, throws, and kitchen gadgets top wish lists",
+       "🥂 New Year party — Decor, hosting supplies, and champagne flutes trending"],
+    ];
+    setInsight("amazonInsight", trends[month].join("\n\n"));
+  }
+
+  runAmazonAgent();
+  fetchPrices();
+  setInterval(fetchPrices, 60_000);
+</script>
+</body>
+</html>

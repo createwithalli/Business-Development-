@@ -1,0 +1,30 @@
+# Portfolio data (user-specific, do not commit)
+allitrade_portfolio.json
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+dist/
+*.egg-info/
+.venv/
+venv/
+env/
+
+# Environment / secrets
+.env
+.env.local
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Jekyll / Pages build output
+_site/
+.jekyll-cache/
+.jekyll-metadata

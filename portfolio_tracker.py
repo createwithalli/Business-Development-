@@ -1,260 +1,447 @@
-# ============================================================
-# 📘 LESSON 1: VARIABLES & DATA TYPES
-# ============================================================
-# Variables store information. Python figures out the type automatically.
+"""
+AlliTrade Portfolio Tracker
 
-app_name = "AlliTrade Portfolio Tracker"  # This is a STRING (text)
-version = 1.0                              # This is a FLOAT (decimal number)
-max_coins = 20                             # This is an INTEGER (whole number)
-is_running = True                          # This is a BOOLEAN (True or False)
+A beginner Python project and interactive tutorial.
+Tracks your crypto portfolio with LIVE prices via CoinGecko API.
 
-# Print sends text to the screen. f"..." lets you insert variables with {curly braces}
-print(f"\n{'='*50}")
-print(f"  {app_name} v{version}")
-print(f"{'='*50}\n")
+Challenges completed in this file:
 
+- Challenge 6: Random price simulation (replaced by live API)
+- Challenge 7: JSON file persistence (save/load portfolio)
+- Challenge 8: Live CoinGecko API with your own API key
 
-# ============================================================
-# 📘 LESSON 2: LISTS
-# ============================================================
-# Lists hold multiple items in order. They use square brackets [].
-# You can add, remove, and loop through them.
+Keep building, Alicia. You've got this. 💪
+"""
 
-supported_coins = ["BTC", "ETH", "BASE", "LINK", "XRP", "SOL", "GLTO"]
+# =============================================================================
+# LESSON 1: VARIABLES & DATA TYPES
+# Variables store information. Python has several types:
+# str (text), int (whole number), float (decimal), bool (True/False)
+# =============================================================================
 
-# Access items by index (position). Indexing starts at 0!
-print(f"First coin: {supported_coins[0]}")   # BTC
-print(f"Last coin: {supported_coins[-1]}")    # GLTO (negative = from the end)
+import requests  # Challenge 8: for live API calls
+import json      # Challenge 7: for saving/loading portfolio
+import os        # for reading environment variables securely
 
-# Check how many items: len()
-print(f"We support {len(supported_coins)} coins\n")
+app_name: str = "AlliTrade Portfolio Tracker"
+version: str = "2.0"
+max_coins: int = 20
+is_running: bool = True
 
+# === YOUR API KEY ===
+# Option A (recommended — keeps key out of code):
+#   In your terminal, run: export COINGECKO_API_KEY="your_key_here"
+#   Then run: python portfolio_tracker.py
+#
+# Option B (quick testing — less secure):
+#   Replace the empty string below with your actual key.
+#   Get a free Demo key at: https://www.coingecko.com/en/api
 
-# ============================================================
-# 📘 LESSON 3: DICTIONARIES
-# ============================================================
-# Dictionaries store key:value pairs. Like a real dictionary:
-# the word is the KEY, the definition is the VALUE.
-# They use curly braces {}.
+COINGECKO_API_KEY: str = os.environ.get("COINGECKO_API_KEY", "")
 
-# Each coin has a name and a simulated price
-coin_data = {
+# File where your portfolio is saved between sessions (Challenge 7)
+PORTFOLIO_FILE: str = "allitrade_portfolio.json"
+
+# =============================================================================
+# LESSON 2: LISTS
+# Lists hold multiple items in order. You can add, remove, and loop through them.
+# =============================================================================
+
+supported_coins: list = [
+    "BTC", "ETH", "XRP", "SUI", "LINK",
+    "SOL", "ADA", "DOGE", "TAO", "FET"
+]
+
+# =============================================================================
+# LESSON 3: DICTIONARIES
+# Dictionaries store key-value pairs. Think of them like a real dictionary:
+# you look up a word (key) to find its definition (value).
+# =============================================================================
+
+# Hardcoded fallback prices — used if the API is unavailable
+coin_data: dict = {
     "BTC":  {"name": "Bitcoin",    "price": 97250.00},
-    "ETH":  {"name": "Ethereum",   "price": 3420.50},
-    "BASE": {"name": "Base",       "price": 12.75},
-    "LINK": {"name": "Chainlink",  "price": 18.90},
-    "XRP":  {"name": "XRP",        "price": 2.35},
-    "SOL":  {"name": "Solana",     "price": 195.60},
-    "GLTO": {"name": "GlobalLotto","price": 0.05},
+    "ETH":  {"name": "Ethereum",   "price": 3380.00},
+    "XRP":  {"name": "XRP",        "price": 2.15},
+    "SUI":  {"name": "Sui",        "price": 3.85},
+    "LINK": {"name": "Chainlink",  "price": 18.40},
+    "SOL":  {"name": "Solana",     "price": 185.00},
+    "ADA":  {"name": "Cardano",    "price": 0.72},
+    "DOGE": {"name": "Dogecoin",   "price": 0.18},
+    "TAO":  {"name": "Bittensor",  "price": 420.00},
+    "FET":  {"name": "Fetch.ai",   "price": 1.65},
 }
 
-# Access a value by its key
-btc_price = coin_data["BTC"]["price"]
-print(f"Bitcoin price: ${btc_price:,.2f}")
-# The :,.2f means: comma separators, 2 decimal places, float format
+# Maps CoinGecko API IDs to our ticker symbols
+COINGECKO_ID_MAP: dict = {
+    "BTC":  "bitcoin",
+    "ETH":  "ethereum",
+    "XRP":  "ripple",
+    "SUI":  "sui",
+    "LINK": "chainlink",
+    "SOL":  "solana",
+    "ADA":  "cardano",
+    "DOGE": "dogecoin",
+    "TAO":  "bittensor",
+    "FET":  "fetch-ai",
+}
 
+# =============================================================================
+# LESSON 4: FUNCTIONS, DOCSTRINGS, RETURN VALUES
+# Functions are reusable blocks of code. def defines them.
+# Docstrings (triple quotes) explain what the function does.
+# return sends a value back to whoever called the function.
+# =============================================================================
 
-# ============================================================
-# 📘 LESSON 4: FUNCTIONS
-# ============================================================
-# Functions are reusable blocks of code. Define with 'def'.
-# They can take PARAMETERS (inputs) and RETURN values (outputs).
+def calculate_value(ticker: str, amount: float) -> float:
+    """
+    Calculates the total USD value of a coin holding.
 
-def calculate_value(symbol, quantity):
-    """Calculate the total value of a coin holding.
+    This teaches: function parameters, return values, dictionary lookup.
 
-    Parameters:
-        symbol (str): The coin ticker, like "BTC"
-        quantity (float): How many coins you hold
+    Args:
+        ticker: The coin symbol e.g. "BTC"
+        amount: How many coins you own e.g. 0.5
 
     Returns:
-        float: The total dollar value
+        Total value in USD as a float
     """
-    # Look up the price from our coin_data dictionary
-    if symbol in coin_data:
-        price = coin_data[symbol]["price"]
-        return price * quantity
-    else:
-        return 0.0  # Return 0 if coin not found
+    price = coin_data[ticker]["price"]  # dictionary lookup
+    return price * amount               # multiplication, then return
 
 
-def format_currency(amount):
-    """Format a number as USD currency string."""
-    return f"${amount:,.2f}"
+def format_currency(amount: float) -> str:
+    """
+    Formats a float as a USD currency string.
+
+    This teaches: f-strings with format specifiers.
+
+    Args:
+        amount: A dollar amount e.g. 12345.678
+
+    Returns:
+        Formatted string e.g. "$12,345.68"
+    """
+    return f"${amount:,.2f}"  # :,.2f = commas + 2 decimal places
 
 
-def display_portfolio(portfolio):
-    """Print a nicely formatted portfolio table.
+def display_portfolio(portfolio: dict) -> None:
+    """
+    Prints a formatted table of the current portfolio.
 
-    This function shows you:
-    - FOR loops (iterating through data)
-    - String formatting (alignment with :<, :>, :^)
-    - Calling other functions from within a function
+    This teaches: f-string alignment, looping over dictionaries,
+    calling other functions, running totals.
+
+    Args:
+        portfolio: Dict of { "BTC": 0.5, "ETH": 2.0, ... }
     """
     if not portfolio:
-        print("  Your portfolio is empty! Add some coins.\n")
+        print("\n  ℹ️  Your portfolio is empty. Add some coins!\n")
         return
 
-    total_value = 0.0
+    print("\n" + "=" * 58)
+    print(f"  {'COIN':<8} {'AMOUNT':>12} {'PRICE':>14} {'VALUE':>14}")
+    print("=" * 58)
 
-    # Print table header
-    print(f"  {'Coin':<8} {'Name':<14} {'Qty':>10} {'Price':>12} {'Value':>14}")
-    print(f"  {'-'*8} {'-'*14} {'-'*10} {'-'*12} {'-'*14}")
+    total_value: float = 0.0
 
-    # FOR LOOP: do something for EACH item in the portfolio
-    for symbol, quantity in portfolio.items():
-        name = coin_data[symbol]["name"]
-        price = coin_data[symbol]["price"]
-        value = calculate_value(symbol, quantity)
-        total_value += value  # += means "add to the current value"
+    for ticker, amount in portfolio.items():
+        price = coin_data[ticker]["price"]
+        value = calculate_value(ticker, amount)
+        total_value += value
 
-        print(f"  {symbol:<8} {name:<14} {quantity:>10.4f} {format_currency(price):>12} {format_currency(value):>14}")
+        # :<, :>, :^ = left, right, center alignment in f-strings
+        print(
+            f"  {ticker:<8} "
+            f"{amount:>12.4f} "
+            f"{format_currency(price):>14} "
+            f"{format_currency(value):>14}"
+        )
 
-    print(f"  {'-'*60}")
-    print(f"  {'TOTAL':>46} {format_currency(total_value):>14}\n")
-
-    return total_value
-
-
-# ============================================================
-# 📘 LESSON 5: USER INPUT & THE MAIN LOOP
-# ============================================================
-# input() pauses and waits for the user to type something.
-# A while loop keeps running until a condition becomes False.
-
-def show_menu():
-    """Display the main menu options."""
-    print("  What would you like to do?")
-    print("  [1] View Portfolio")
-    print("  [2] Add a Coin")
-    print("  [3] Remove a Coin")
-    print("  [4] View Supported Coins")
-    print("  [5] Check a Coin's Price")
-    print("  [Q] Quit\n")
+    print("=" * 58)
+    print(f"  {'TOTAL VALUE':>36} {format_currency(total_value):>14}")
+    print("=" * 58 + "\n")
 
 
-def add_coin(portfolio):
-    """Add a coin to the portfolio.
+# =============================================================================
+# LESSON 8 (CHALLENGE): LIVE API WITH YOUR OWN KEY
+# This function fetches real-time prices from CoinGecko.
+# It teaches: HTTP requests, API keys, error handling, graceful fallback.
+# =============================================================================
+
+def fetch_live_prices() -> bool:
+    """
+    Fetches live USD prices from CoinGecko and updates coin_data in place.
 
     This teaches:
-    - User input
-    - Input validation (checking if input is valid)
-    - Error handling with try/except
-    - The .upper() string method
+    - Making HTTP GET requests with the requests library
+    - Passing API keys in request headers (secure pattern)
+    - Reading and parsing JSON API responses
+    - Handling multiple failure modes gracefully
+    - Fallback strategy when external services are unavailable
+
+    Returns:
+        True if prices were updated successfully, False if fallback was used.
     """
-    print("\n  --- Add a Coin ---")
-    symbol = input("  Enter coin symbol (e.g. BTC): ").upper()  # .upper() converts to uppercase
+    ids_param = ",".join(COINGECKO_ID_MAP.values())
 
-    # CONDITIONAL: check IF the symbol is valid
-    if symbol not in coin_data:
-        print(f"  ❌ '{symbol}' is not supported. Use option [4] to see available coins.\n")
-        return portfolio  # Exit the function early
+    # Build request headers — API key goes here, not in the URL
+    headers = {"accept": "application/json"}
+    if COINGECKO_API_KEY:
+        # Free Demo key header (get yours at coingecko.com/en/api)
+        headers["x-cg-demo-api-key"] = COINGECKO_API_KEY
+        # If you upgrade to a Pro key, use this instead:
+        # headers["x-cg-pro-api-key"] = COINGECKO_API_KEY
 
-    if symbol in portfolio:
-        print(f"  ℹ️  You already have {symbol}. Current quantity: {portfolio[symbol]}")
+    url = (
+        "https://api.coingecko.com/api/v3/simple/price"
+        f"?ids={ids_param}&vs_currencies=usd"
+    )
 
-    # TRY/EXCEPT: handle errors gracefully (e.g., user types "abc" instead of a number)
     try:
-        quantity = float(input("  Enter quantity: "))
-        if quantity <= 0:
-            print("  ❌ Quantity must be greater than 0.\n")
-            return portfolio
+        print("  ℹ️  Fetching live prices from CoinGecko...")
+        response = requests.get(url, headers=headers, timeout=8)
+
+        # Handle specific HTTP error codes before raising
+        if response.status_code == 429:
+            print("  ❌ Rate limit reached (30 calls/min on free tier).")
+            print("  ℹ️  Using cached prices. Try again in a minute.\n")
+            return False
+
+        if response.status_code == 401:
+            print("  ❌ API key invalid or missing.")
+            print("  ℹ️  Check your COINGECKO_API_KEY and try again.\n")
+            return False
+
+        response.raise_for_status()  # raises for any other 4xx/5xx errors
+        data = response.json()       # parse JSON response into a dict
+
+        # Update coin_data prices from API response
+        updated_count = 0
+        for ticker, cg_id in COINGECKO_ID_MAP.items():
+            if cg_id in data and "usd" in data[cg_id]:
+                coin_data[ticker]["price"] = data[cg_id]["usd"]
+                updated_count += 1
+
+        print(f"  ✅ Live prices loaded for {updated_count} coins!\n")
+        return True
+
+    except requests.exceptions.ConnectionError:
+        print("  ❌ No internet connection.")
+        print("  ℹ️  Using cached prices.\n")
+    except requests.exceptions.Timeout:
+        print("  ❌ CoinGecko request timed out (8s).")
+        print("  ℹ️  Using cached prices.\n")
+    except requests.exceptions.RequestException as e:
+        print(f"  ❌ Network error: {e}")
+        print("  ℹ️  Using cached prices.\n")
+    except Exception as e:
+        print(f"  ❌ Unexpected error: {e}")
+        print("  ℹ️  Using cached prices.\n")
+
+    return False
+
+
+# =============================================================================
+# LESSON 7 (CHALLENGE): FILE PERSISTENCE WITH JSON
+# Saves your portfolio to a file so it survives between sessions.
+# This teaches: file I/O, json module, try/except for file errors.
+# =============================================================================
+
+def save_portfolio(portfolio: dict) -> None:
+    """
+    Saves the portfolio to a JSON file.
+
+    This teaches: writing files, json.dump(), error handling for file I/O.
+
+    Args:
+        portfolio: The current portfolio dict to save.
+    """
+    try:
+        with open(PORTFOLIO_FILE, "w") as f:
+            json.dump(portfolio, f, indent=2)
+        print(f"  ✅ Portfolio saved to {PORTFOLIO_FILE}\n")
+    except IOError as e:
+        print(f"  ❌ Could not save portfolio: {e}\n")
+
+
+def load_portfolio() -> dict:
+    """
+    Loads the portfolio from a JSON file if it exists.
+
+    This teaches: reading files, json.load(), handling missing files.
+
+    Returns:
+        A portfolio dict if the file exists, otherwise an empty dict.
+    """
+    if not os.path.exists(PORTFOLIO_FILE):
+        return {}  # No saved file yet — start fresh
+
+    try:
+        with open(PORTFOLIO_FILE, "r") as f:
+            portfolio = json.load(f)
+        # Filter out any coins no longer in supported_coins
+        portfolio = {k: v for k, v in portfolio.items() if k in coin_data}
+        if portfolio:
+            print(f"  ✅ Portfolio loaded from {PORTFOLIO_FILE}\n")
+        return portfolio
+    except (IOError, json.JSONDecodeError) as e:
+        print(f"  ❌ Could not load saved portfolio: {e}\n")
+        return {}
+
+
+# =============================================================================
+# LESSON 5: USER INPUT, LOOPS, ERROR HANDLING
+# input() reads text from the user. Loops repeat code. try/except
+# catches errors so the program doesn't crash unexpectedly.
+# =============================================================================
+
+def show_menu() -> None:
+    """
+    Prints the main menu options.
+
+    This teaches: printing structured output, keeping UI logic separate.
+    """
+    print("  What would you like to do?")
+    print("  1. View portfolio")
+    print("  2. Add / update a coin")
+    print("  3. Remove a coin")
+    print("  4. View all supported coins & live prices")
+    print("  5. Check a single coin's price")
+    print("  6. Refresh live prices")
+    print("  7. Save portfolio")
+    print("  8. Quit\n")
+
+
+def add_coin(portfolio: dict) -> None:
+    """
+    Prompts the user to add or update a coin in the portfolio.
+
+    This teaches: input validation, .upper() for normalization,
+    early return for invalid input, updating a dictionary.
+
+    Args:
+        portfolio: The current portfolio dict (modified in place).
+    """
+    print("\n  Supported coins:", ", ".join(supported_coins))
+    ticker = input("  Enter coin ticker (e.g. BTC): ").strip().upper()
+    # .upper() converts to uppercase so "btc" and "BTC" both work
+
+    if ticker not in coin_data:
+        print(f"  ❌ '{ticker}' is not supported yet.\n")
+        return  # early return stops the function here
+
+    try:
+        amount = float(input(f"  Enter amount of {ticker} you own: ").strip())
     except ValueError:
-        print("  ❌ That's not a valid number. Try again.\n")
-        return portfolio
+        # ValueError is raised when float() can't convert the input
+        print("  ❌ Invalid amount. Please enter a number (e.g. 0.5).\n")
+        return
 
-    # Add to portfolio (or update existing quantity)
-    if symbol in portfolio:
-        portfolio[symbol] += quantity  # Add to existing
-        print(f"  ✅ Updated {symbol} → total quantity: {portfolio[symbol]:.4f}\n")
-    else:
-        portfolio[symbol] = quantity   # New entry
-        print(f"  ✅ Added {quantity:.4f} {symbol} to your portfolio!\n")
+    if amount <= 0:
+        print("  ❌ Amount must be greater than zero.\n")
+        return
 
-    return portfolio
+    if len(portfolio) >= max_coins and ticker not in portfolio:
+        print(f"  ❌ Portfolio limit reached ({max_coins} coins max).\n")
+        return
+
+    portfolio[ticker] = amount  # add or update the dictionary entry
+    value = calculate_value(ticker, amount)
+    print(f"  ✅ Added {amount} {ticker} ({format_currency(value)})\n")
 
 
-def remove_coin(portfolio):
-    """Remove a coin from the portfolio.
-
-    This teaches the 'del' keyword for removing dictionary entries.
+def remove_coin(portfolio: dict) -> None:
     """
-    print("\n  --- Remove a Coin ---")
+    Removes a coin from the portfolio.
 
+    This teaches: del statement, membership check with 'in'.
+
+    Args:
+        portfolio: The current portfolio dict (modified in place).
+    """
     if not portfolio:
-        print("  Your portfolio is empty — nothing to remove.\n")
-        return portfolio
+        print("  ℹ️  Nothing to remove — portfolio is empty.\n")
+        return
 
-    symbol = input("  Enter coin symbol to remove: ").upper()
+    ticker = input("  Enter coin ticker to remove: ").strip().upper()
 
-    if symbol in portfolio:
-        del portfolio[symbol]  # 'del' deletes an item from a dictionary
-        print(f"  ✅ Removed {symbol} from your portfolio.\n")
-    else:
-        print(f"  ❌ {symbol} is not in your portfolio.\n")
+    if ticker not in portfolio:
+        print(f"  ❌ '{ticker}' is not in your portfolio.\n")
+        return
 
-    return portfolio
+    del portfolio[ticker]  # del removes a key-value pair from a dict
+    print(f"  ✅ Removed {ticker} from your portfolio.\n")
 
 
-def view_supported_coins():
-    """Show all supported coins and their prices.
-
-    This teaches: looping through a dictionary with .items()
+def view_supported_coins() -> None:
     """
-    print("\n  --- Supported Coins ---")
-    for symbol, data in coin_data.items():
-        print(f"  {symbol:<6} {data['name']:<14} {format_currency(data['price']):>12}")
+    Lists all supported coins with their current prices.
+
+    This teaches: looping over a dict with .items(), formatted output.
+    """
+    print("\n  Supported Coins & Current Prices")
+    print("  " + "-" * 38)
+    for ticker, info in coin_data.items():
+        # info is a dict: {"name": "Bitcoin", "price": 97250.0}
+        print(
+            f"  {ticker:<6} {info['name']:<18} {format_currency(info['price']):>12}"
+        )
     print()
 
 
-def check_price():
-    """Look up a single coin's price.
-
-    This teaches: dictionary lookups and conditional logic.
+def check_price() -> None:
     """
-    symbol = input("\n  Enter coin symbol: ").upper()
+    Looks up the current price of a single coin.
 
-    if symbol in coin_data:
-        data = coin_data[symbol]
-        print(f"\n  {data['name']} ({symbol}): {format_currency(data['price'])}\n")
-    else:
-        print(f"  ❌ '{symbol}' not found.\n")
+    This teaches: dictionary lookup with error handling.
+    """
+    ticker = input("  Enter coin ticker to check: ").strip().upper()
+
+    if ticker not in coin_data:
+        print(f"  ❌ '{ticker}' is not in our supported coins list.\n")
+        return
+
+    info = coin_data[ticker]
+    print(f"  ✅ {info['name']} ({ticker}): {format_currency(info['price'])}\n")
 
 
-# ============================================================
-# 📘 LESSON 6: PUTTING IT ALL TOGETHER — THE MAIN PROGRAM
-# ============================================================
-# This is where everything connects. The 'main()' function
-# runs a WHILE LOOP that keeps the app going until you quit.
+# =============================================================================
+# LESSON 6: PUTTING IT ALL TOGETHER — THE MAIN PROGRAM LOOP
+# The main() function ties everything together.
+# A while loop keeps the menu running until the user chooses to quit.
+# =============================================================================
 
-def main():
-    """The main program loop."""
+def main() -> None:
+    """
+    The main program loop.
 
-    # Start with a sample portfolio (you can change these!)
-    portfolio = {
-        "BTC": 0.15,
-        "ETH": 2.5,
-        "GLTO": 10000.0,
-    }
+    This teaches: while loops, if/elif/else branching,
+    calling functions, keeping state across iterations.
+    """
+    print("\n" + "=" * 58)
+    print(f"  🚀 {app_name} v{version}")
+    print("=" * 58 + "\n")
 
-    print("  Welcome! Here's your starting portfolio:\n")
-    display_portfolio(portfolio)
+    # Challenge 8: Try to load live prices at startup
+    fetch_live_prices()
 
-    # WHILE LOOP: keeps running as long as is_running is True
-    running = True
-    while running:
+    # Challenge 7: Load saved portfolio from file (if it exists)
+    portfolio = load_portfolio()
+
+    while is_running:  # loop runs until we break out of it
         show_menu()
-        choice = input("  Your choice: ").strip()  # .strip() removes extra spaces
+        choice = input("  Enter your choice (1-8): ").strip()
+        print()  # blank line for breathing room
 
         if choice == "1":
-            print("\n  --- Your Portfolio ---")
             display_portfolio(portfolio)
 
         elif choice == "2":
-            portfolio = add_coin(portfolio)
+            add_coin(portfolio)
 
         elif choice == "3":
-            portfolio = remove_coin(portfolio)
+            remove_coin(portfolio)
 
         elif choice == "4":
             view_supported_coins()
@@ -262,52 +449,78 @@ def main():
         elif choice == "5":
             check_price()
 
-        elif choice.upper() == "Q":
-            print("\n  Final portfolio summary:")
-            display_portfolio(portfolio)
-            print(f"  Thanks for using {app_name}! 🚀")
+        elif choice == "6":
+            # Refresh live prices on demand
+            fetch_live_prices()
+
+        elif choice == "7":
+            # Manually save the portfolio to file
+            save_portfolio(portfolio)
+
+        elif choice == "8":
+            # Auto-save on quit
+            if portfolio:
+                save_portfolio(portfolio)
             print("  Keep building, Alicia. You've got this. 💪\n")
-            running = False  # This stops the while loop
+            break  # break exits the while loop
 
         else:
-            print("  ❌ Invalid choice. Please enter 1-5 or Q.\n")
+            print("  ❌ Invalid choice. Please enter a number from 1 to 8.\n")
 
 
-# ============================================================
-# 📘 LESSON 7: THE ENTRY POINT
-# ============================================================
-# This special 'if' statement means: "only run main() if this
-# file is being run directly (not imported by another file)."
-# It's a Python convention you'll see everywhere.
+# =============================================================================
+# LESSON 7: THE if __name__ == "__main__" PATTERN
+# This block only runs when you execute the file directly:
+#   python portfolio_tracker.py
+# It does NOT run when the file is imported as a module.
+# This is a Python best practice for all runnable scripts.
+# =============================================================================
 
 if __name__ == "__main__":
     main()
 
+# =============================================================================
+# CHALLENGE EXERCISES
+# =============================================================================
 
 """
-🎯 CHALLENGES — Try these after you run the program!
-=====================================================
+You've already completed Challenges 6, 7, and 8 in this file!
+Here are more ideas to keep growing:
 
-EASY:
-  1. Add a new coin to the coin_data dictionary (pick your favorite)
-  2. Change the starting portfolio amounts
-  3. Change the app_name to something custom
+Challenge 1 — DONE (basic structure)
+Challenge 2 — DONE (add/remove coins)
+Challenge 3 — DONE (display table)
+Challenge 4 — DONE (input validation)
+Challenge 5 — DONE (multiple menu options)
+Challenge 6 — DONE (live prices via API, replacing random simulation)
+Challenge 7 — DONE (JSON file persistence — save/load portfolio)
+Challenge 8 — DONE (CoinGecko API with your own API key)
 
-MEDIUM:
-  4. Add a menu option [6] that shows your best-performing holding
-  5. Add a "total cost" field so you can track profit/loss
-  6. Make the coin prices change randomly each time you view them
-     (Hint: import random, then use random.uniform(low, high))
+Challenge 9: PORTFOLIO HISTORY
+- Every time prices are refreshed, append a timestamp + total value to a list
+- At quit, save this history to a separate JSON file
+- Add a "View history" menu option that prints a simple price chart using ASCII
 
-HARD:
-  7. Save the portfolio to a file so it persists between runs
-     (Hint: look up Python's 'json' module — json.dump / json.load)
-  8. Connect to a REAL API to get live prices
-     (Hint: pip install requests, then use requests.get()
-      with the CoinGecko API — you've already worked with this!)
-  9. Add a "price alert" feature that notifies you when a coin
-     hits a target price
+Challenge 10: PROFIT/LOSS TRACKING
+- When adding a coin, also ask: "What did you pay per coin?" (your cost basis)
+- Store this in a separate dict: { "BTC": 85000.00 }
+- In display_portfolio(), add a P/L column showing gain or loss per holding
+- Color-code it: green (profit) vs red (loss) using ANSI escape codes
 
-Each challenge builds on what you learned in the lessons above.
-Start with the easy ones and work your way up! 🚀
+Challenge 11: PRICE ALERTS
+- Let the user set a target price for any coin: "Alert me when BTC hits $100k"
+- Store alerts in a dict: { "BTC": {"above": 100000, "below": None} }
+- After each price refresh, check all alerts and print a notification
+
+Challenge 12: EXPORT TO CSV
+- Add a menu option to export the current portfolio to a .csv file
+- Use Python's built-in csv module
+- Columns: Ticker, Name, Amount, Price, Value, % of Portfolio
+
+Getting your free CoinGecko API key:
+1. Go to https://www.coingecko.com/en/api
+2. Sign up for a free account
+3. Copy your Demo API key
+4. In terminal: export COINGECKO_API_KEY="your_key_here"
+5. Run: python portfolio_tracker.py
 """
